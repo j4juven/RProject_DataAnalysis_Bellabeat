@@ -1,0 +1,379 @@
+---
+title: 'Google Capstone Project: Bellabeat using R'
+author: "Juven"
+date: "2022-09-14"
+output: 
+  html_document: 
+  theme: cerulean
+  toc: true
+
+---
+
+
+## Introduction
+
+Bellabeat is a high tech manufacturer of health-focused products for women. Bellameat is a successful small company but they have the potential to become a large player in the global smart device market. Urska Srsen and Sando Mur founded Bellabeat.This is Bellabeat data analysis case study. In this case study the tasks that were performed are real world tasks which are generally performed by Junior Data Analyst. 
+Srsen knows that an analysis of Bellabeat's available consumer data would reveal more opportunities  for growth. Bellabeat is focusing on expanding its business. The main focus is to analyze smart devices fitness data and determine how it could help to improve company's marketing strategy with data-driven decisions.
+
+## Steps 
+
+The case study has undergone the following steps of data analysis:
+
+* Ask
+* Prepare
+* Process
+* Analyze
+* Share 
+* Instead of Act, it is recommendation
+
+## Ask 
+
+This case study tried to answer following questions in order to solve problems:
+
+* What are some trends in smart device 
+* How could these trends apply to Bellabeat customers?
+* How could these trends help influence bellabeat marketing strategy?
+
+Stakeholders:
+
+* Urska Srsen - Bellabeat co-founder and Chief Creative Officer
+* Sando Mur - Bellabear co-founder and key member of Bellabeat executive team
+* Bellabeat Marketing Analytics team
+
+## Prepare 
+
+For this case study Srsen encouraged to use public data that explores smart device users' daily habits. She pointed out to a specific data set. That is Fitbit Fitness Tracker Data (CCo: Public Domain, dataset made available through Mobius [link](https://www.kaggle.com/datasets/arashnic/fitbit)): This Kaggle data set contains personal fitness tracker from thirty fitbit users. 
+This data set contains data as in minutes, seconds, hourly and daily values of some metrics like sleep, activity, heartrate etc. and it is ensuring that the data is comprehensive. The data was collected in 2016 but this case study has been conducted in 2022. 
+
+At the very beginning this study has installed following packages and loaded them one by one.
+```{r loading packages}
+library(tidyverse)
+library(here)
+library(skimr)
+library(janitor)
+library(dplyr)
+library(readr)
+library(knitr)
+```
+
+**Importing data sets **
+
+In total there are 18 csv files. From that this study will be using few datasets that will help with the analysis. Those datasets are following: 
+
+* daily_Activity
+* daily_calories 
+* daily_intensities
+* daily_steps
+* heartrate_seconds
+* sleep_day
+* weight_log_info
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+daily_activity <- read_csv("/Users/juven/Desktop/Google Capstone Project/Fitabase Data 4.12.16-5.12.16/dailyActivity_merged.csv")
+daily_calories <- read_csv("/Users/juven/Desktop/Google Capstone Project/Fitabase Data 4.12.16-5.12.16/dailyCalories_merged.csv")
+daily_intensities <- read_csv("/Users/juven/Desktop/Google Capstone Project/Fitabase Data 4.12.16-5.12.16/dailyIntensities_merged.csv")
+daily_steps <- read_csv("/Users/juven/Desktop/Google Capstone Project/Fitabase Data 4.12.16-5.12.16/dailySteps_merged.csv")
+heartrate_seconds <- read_csv("/Users/juven/Desktop/Google Capstone Project/Fitabase Data 4.12.16-5.12.16/heartrate_seconds_merged.csv")
+sleep_day <- read_csv("/Users/juven/Desktop/Google Capstone Project/Fitabase Data 4.12.16-5.12.16/sleepDay_merged.csv")
+weight_log_info <- read_csv("/Users/juven/Desktop/Google Capstone Project/Fitabase Data 4.12.16-5.12.16/weightLogInfo_merged.csv")
+```
+
+This study also used three datasets to analyze hourly activities. For that this study will combine three datasets into one. Those three datasets are following:
+
+* hourly_calories
+* hourly_intensities
+* hourly_steps
+
+For that this study has imported additional three datasets again.
+
+```{r}
+hourly_calories <- read_csv("/Users/juven/Desktop/Google Capstone Project/Fitabase Data 4.12.16-5.12.16/hourlyCalories_merged.csv")
+hourly_intensities <- read_csv("/Users/juven/Desktop/Google Capstone Project/Fitabase Data 4.12.16-5.12.16/hourlyIntensities_merged.csv")
+hourly_steps <- read_csv("/Users/juven/Desktop/Google Capstone Project/Fitabase Data 4.12.16-5.12.16/hourlySteps_merged.csv")
+
+```
+
+In order to get the dataset which will provide this study the hourly activity, three datasets need to be merged together. The final hourly_activity dataset will give clear view for better analysis. 
+
+```{r}
+hourly_activity1 <- merge(x = hourly_calories, y = hourly_intensities, by = c("Id", "ActivityHour"))
+hourly_activity <- merge(x= hourly_activity1, y = hourly_steps, by = c("Id", "ActivityHour"))
+```
+
+In all of the datasets that this study has chosen, dates are not correctly formatted. It needs to be correctly formatted. Formatting dates given below:
+
+```{r}
+library(lubridate)
+daily_activity$ActivityDate <- as.POSIXct(daily_activity$ActivityDate, format = "%m/ %d/ %Y")
+daily_calories$ActivityDay <- as.POSIXct(daily_calories$ActivityDay, format = "%m/ %d/ %Y")
+daily_intensities$ActivityDay <- as.POSIXct(daily_intensities$ActivityDay, format = "%m/ %d/ %Y")
+daily_steps$ActivityDay <- as.POSIXct(daily_steps$ActivityDay, format = "%m/ %d/ %Y")
+heartrate_seconds$Time <- strptime(heartrate_seconds$Time, format = "%m/ %d/ %Y %I:%M:%S %p")
+hourly_activity$ActivityHour <- strptime(hourly_activity$ActivityHour, format = "%m/ %d/ %Y %I:%M:%S %p")
+sleep_day$SleepDay <- as.POSIXct(sleep_day$SleepDay, format = "%m/ %d/ %Y %I:%M:%S %p")
+weight_log_info$Date <- strptime(weight_log_info$Date, format = "%m/ %d/ %Y %I:%M:%S %p")
+```
+
+## Process
+
+This study has chosen R programming language as the datasets are large. SQL also could have done the same thing but for better understanding and for better visualization, R was preferrable over SQL. Tidyverse, a package of R gives a lot to a person to use for better analyzing and for better visualizing. 
+
+Before continuing further it is better to check whether all the datasets are imported properly or not. 
+
+```{r}
+glimpse(daily_activity)
+glimpse(daily_calories)
+glimpse(daily_intensities)
+glimpse(daily_steps)
+glimpse(heartrate_seconds)
+glimpse(hourly_activity)
+glimpse(sleep_day)
+glimpse(weight_log_info)
+```
+
+Before continuing further, it is also suggested to check the uniqueness among the IDs. In that way it will be known exactly how many people participated in preparing all the datasets and it is also gives a clear view about consistency. 
+
+```{r}
+n_distinct(daily_activity$Id)
+n_distinct(daily_calories$Id)
+n_distinct(daily_intensities$Id)
+n_distinct(daily_steps$Id)
+n_distinct(heartrate_seconds$Id)
+n_distinct(hourly_activity$Id)
+n_distinct(sleep_day$Id)
+n_distinct(weight_log_info$Id)
+```
+
+As weight_log_info has only 8 unique IDs, this dataset will be dropped from the study. sleep_day and hearrate_seconds both respectively have 24 and 14 unique IDs. Still this study will continue with these datasets because there are some questions can be answered from these. 
+
+Now it is time to check for duplicate entries. It is very much important to check and eliminate duplicate entries because it helps a lot for analyzing purposes. 
+
+```{r}
+sum(duplicated(daily_activity))
+sum(duplicated(daily_calories))
+sum(duplicated(daily_intensities))
+sum(duplicated(daily_steps))
+sum(duplicated(heartrate_seconds))
+sum(duplicated(hourly_activity))
+sum(duplicated(sleep_day))
+```
+
+As there are some duplicate entries on sleep_day dataset, duplicate entries need to be removed immediately for continuing further. 
+
+```{r}
+library(dplyr)
+sleep_day_unique <- distinct(sleep_day)
+sum(duplicated(sleep_day_unique))
+```
+
+It is also very important to check if there are any missing values as these missing values can create hindrance on the analysis. Those may become obstacles for the answer that this study is trying to find. 
+
+```{r}
+sum(is.na(daily_activity))
+sum(is.na(daily_calories))
+sum(is.na(daily_intensities))
+sum(is.na(daily_steps))
+sum(is.na(heartrate_seconds))
+sum(is.na(hourly_activity))
+sum(is.na(sleep_day_unique))
+```
+
+## Analyze
+
+This study has explored the datasets. 
+Some data needs to be transformed specially to find days for each date as this will allow to give some insights. 
+
+```{r}
+daily_activity <- transform(daily_activity, Days_Weeks = weekdays(ActivityDate))
+daily_calories <- transform(daily_calories, Days_Weeks = weekdays(ActivityDay))
+daily_intensities <- transform(daily_intensities, Days_Weeks = weekdays(ActivityDay))
+daily_steps <- transform(daily_steps, Days_Weeks = weekdays(ActivityDay))
+sleep_day_unique <- transform(sleep_day_unique, Days_Weeks = weekdays(SleepDay))
+hourly_activity <- transform(hourly_activity, Days_Weeks = weekdays(ActivityHour))
+```
+
+As in heartrate_seconds, time was given on every 5 seconds interval, this study has transformed those seconds into days for better understanding of the usage of smart devices. 
+
+```{r}
+heartrate_seconds_final <- heartrate_seconds %>% 
+  mutate(date_col = date(Time)) %>% 
+  group_by(Id, date_col) %>% 
+  summarize(Value = sum(Value)) 
+```
+
+Now similar to other datasets transformation, finding days for each date in heartrate_seconds dataset. 
+
+```{r}
+heartrate_seconds_final <- transform(heartrate_seconds_final, Days_Weeks = weekdays(date_col))
+```
+
+For better analyzation purpose, this study has decided to merge some datasets together. Some columns from final datatsets will have same purpose but with different names. In other words those are just like duplicates. It is better to remove and rename those for better understanding of dataset. 
+
+```{r}
+steps_and_calories <- merge(daily_calories, daily_steps, by = c("Id", "ActivityDay"))
+
+steps_and_calories_final <- steps_and_calories %>% 
+  select(-Days_Weeks.y) %>% 
+  rename(days_weeks = Days_Weeks.x)
+
+intensities_and_calories <- merge(daily_calories, daily_intensities, by = c("Id", "ActivityDay"))
+
+intensities_and_calories_final <- intensities_and_calories %>% 
+  select(-Days_Weeks.y) %>% 
+  rename(days_weeks = Days_Weeks.x)
+```
+
+In order to merge data with sleep and calories, we need to rename ActivityDay and SleepDay colums into days.
+
+```{r}
+daily_calories_1 <- daily_calories %>% 
+  rename(days = ActivityDay)
+
+sleep_day_unique_1 <- sleep_day_unique %>% 
+  rename(days = SleepDay)
+
+sleep_and_calories <- merge(daily_calories_1, sleep_day_unique_1, by = c("Id", "days"))
+
+sleep_and_calories_final <- sleep_and_calories
+
+sleep_and_calories_final <- sleep_and_calories_final %>% 
+  select( - Days_Weeks.y)
+sleep_and_calories_final <- sleep_and_calories_final %>% 
+  rename(days_weeks = Days_Weeks.x)
+```
+
+hourly_activity_final <- hourly_activity  
+daily_activity_final <- daily_activity
+
+```{r}
+hourly_activity_final <- hourly_activity  
+
+daily_activity_final <- daily_activity
+```
+
+Now this study has the final datasets for better visualization and for more proper analyzation.
+
+* daily_activity (Since it has already given metrics like calories and other)
+* steps_and_calories_final
+* intensities_and_calories_final
+* hourly_activity_final
+* sleep_and_calories_final (Total unique Id is 24 because it only took those Id which were present in two datasets)
+* heartrate_seconds_final
+
+Final time checking if any missing values are present in final datasets.
+
+```{r}
+sum(is.na(daily_activity_final))
+sum(is.na(steps_and_calories_final))
+sum(is.na(intensities_and_calories_final))
+sum(is.na(hourly_activity_final))
+sum(is.na(sleep_and_calories_final))
+sum(is.na(heartrate_seconds_final))
+```
+
+Final time checking for unique Id's in all datasets
+
+```{r}
+n_distinct(daily_activity_final$Id)
+n_distinct(steps_and_calories_final$Id)
+n_distinct(intensities_and_calories_final$Id)
+n_distinct(hourly_activity_final$Id)
+n_distinct(sleep_and_calories_final$Id)
+n_distinct(heartrate_seconds_final$Id)
+```
+
+## Sharing Data Through The Art of Visualization 
+
+```{r}
+ggplot(data = daily_activity_final) +
+  geom_bar(mapping = aes (x = Days_Weeks, fill = Days_Weeks,)) +
+  labs(title = " Days with Activities and Usage", caption = "Fitbit Fitness Tracker Data availability by Mobius")
+
+```
+
+```{r}
+ggplot(data = steps_and_calories_final) +
+  geom_point(mapping = aes(x = Calories, y = StepTotal, alpha = Calories), color = "dark green") +
+  geom_smooth(mapping = aes(x = Calories, y = StepTotal), color = "maroon") +
+  labs(title = " Total Steps vs Calories", caption = "Fitbit Fitness Tracker Data availability by Mobius")
+
+```
+
+```{r}
+ggplot(data = intensities_and_calories_final) +
+  geom_point(mapping = aes(x = Calories, y = VeryActiveMinutes, alpha = Calories), color = "black") +
+  geom_smooth(mapping = aes(Calories, y = VeryActiveMinutes), color = "maroon") + 
+  labs(title = " Very Active Minutes vs Calories", caption = "Fitbit Fitness Tracker Data availability by Mobius")
+```
+
+```{r}
+ggplot(data = intensities_and_calories_final) +
+  geom_point(mapping = aes(x = Calories, y = VeryActiveDistance, alpha = Calories), color = "maroon") +
+  geom_smooth(mapping = aes(Calories, y = VeryActiveDistance), color = "blue") +
+  facet_wrap(~days_weeks) +
+  labs(title = " Very Active Distance vs Calories", caption = "Fitbit Fitness Tracker Data availability by Mobius")
+```
+
+```{r}
+ggplot(data = intensities_and_calories_final) +
+  geom_smooth( mapping = aes(x = VeryActiveDistance, y = VeryActiveMinutes, alpha = VeryActiveDistance), color = "navy blue") +
+  labs(title = " Very Active Distance vs Very Active Minutes", caption = "Fitbit Fitness Tracker Data availability by Mobius")
+
+```
+
+```{r}
+ggplot(data = hourly_activity_final) +
+  geom_point(mapping = aes(x = Calories, y = AverageIntensity), color = "purple") +
+  geom_smooth(mapping = aes(x = Calories, y = AverageIntensity), color = "black") +
+  facet_grid(~Days_Weeks) +
+  labs(title = " Hourly Average Intersity vs Hourly Calories", caption = "Fitbit Fitness Tracker Data availability by Mobius")
+
+```
+
+```{r}
+ggplot(data = sleep_and_calories_final) +
+  geom_point(mapping = aes(x = Calories, y = TotalMinutesAsleep), color = " navy blue") +
+  geom_smooth(mapping = aes(x = Calories, y = TotalMinutesAsleep), color = "maroon") +
+  labs(title = " Total Minutes Asleep vs Calories", caption = "Fitbit Fitness Tracker Data availability by Mobius")
+
+```
+
+```{r}
+ggplot(data = sleep_and_calories_final) +
+  geom_point(mapping = aes(x = TotalTimeInBed, y = TotalMinutesAsleep), color = " orange") +
+  geom_smooth(mapping = aes(x = TotalTimeInBed, y = TotalMinutesAsleep), color = "blue") +
+  labs(title = " Total Minutes Asleep vs Total Time In Bed", caption = "Fitbit Fitness Tracker Data availability by Mobius")
+```
+
+```{r}
+ggplot(data = heartrate_seconds_final) +
+  geom_bar(mapping = aes(x = Days_Weeks, fill = Days_Weeks)) +
+  labs(title = "Heart rate Values per Day", caption = "Fitbit Fitness Tracker Data availability by Mobius")
+```
+
+Trends
+
+* All the users are using the fitness tracker smart device on daily basis. This study can see that days in the middle of the week such as Tuesdays, Wednesdays and Thursdays are high with daily activities. Weekends and beginning and end of the week, activities are comparatively lower than those active days. 
+
+* Total steps and Calories can be seen as positive relationship. As total steps are increasing, total calories also increasing. Similarly, very active minutes and very active distance with calories. Very active distance is also associated with very active minutes. Hourly intensities are also having positive relationship with hourly calories. 
+
+* However this study also tried to see the trend between calories and sleep. It can be seen that calories do not influence much on sleep. Total time in bed and total time asleep also has no significant effect. It is not the case that total time bed has positive significance with total time asleep. 
+
+* Heartrate is similar to the daily activities. It can be seen that days in the middle of the week such as Tuesdays, Wednesdays and Thursdays are high. Weekends and beginning and end of the week are comparatively lower than those active days.
+
+## Instead of Act, it is recommendation
+
+* This study has been carried out on 2022 whereas this data was collected on 2016. Updated data is very much needed to carry on data-driven decisions.
+
+* Users are only 30. With this sample size analysis can have biases. So it is recommended to have bigger sample size. Although the data says users are 30 but unique IDs are 33 in some datasets.Lets say a unique ID for a user then it should be 30 unique IDs. There can  be possibilities of having some users with two unique IDs. 
+
+* Bellabeat can use different parameters for their devices. It is because Bellabeat focuses on women only and women have many different activities throughout the day. This fitbit fitness tracker data does not say that this data has been taken only from women. 
+
+* Marketing team can focus on those parameters which are only applicable for women. A smart device which can mainly help women with their health related complexities and to keep track on their daily life. This propositions can help Bellabeat to attract more customers since their target customers are mainly women. 
+
+### This Capstone Project was really an eye - opening for me. It really helped me a lot in understanding the basics of data analytics and what data analyst do in their workspace. I really enjoyed a lot and it helped me a lot to move a step further. 
+
+
